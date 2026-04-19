@@ -25,11 +25,14 @@ from ai_service import (
     generate_post_submit_analysis,
     generate_pre_submit_hint,
     generate_title_from_text,
+    list_models,
 )
 from db_service import (
     download_question_pdf,
     fetch_question_by_code,
     list_questions_public,
+    get_ollama_config,
+    update_ollama_config,
 )
 from rag_service import rag_service
 
@@ -231,6 +234,49 @@ async def get_all_questions():
             for q in MOCK_QUESTIONS_DB.values()
         ]
     return list_questions_public()
+
+
+@app.get("/api/models")
+async def get_ollama_models():
+    """Proxy for listing available Ollama models"""
+    models = list_models()
+    return {"models": models}
+
+
+@app.get("/api/health")
+async def health_check():
+    """Check AI service and Ollama connection health"""
+    config = get_ollama_config()
+    models = list_models()
+    return {
+        "status": "ok",
+        "ollama": {
+            "url": config.get("url"),
+            "connected": len(models) > 0,
+            "models_count": len(models)
+        }
+    }
+
+
+@app.get("/api/config/ollama")
+async def get_current_ollama_config():
+    """Retrieve current Ollama configuration from DB"""
+    config = get_ollama_config()
+    return config
+
+
+class OllamaUpdate(BaseModel):
+    url: str
+    model: str
+
+
+@app.post("/api/config/ollama")
+async def update_current_ollama_config(data: OllamaUpdate):
+    """Update Ollama configuration in BaaS style"""
+    success = update_ollama_config(data.url, data.model)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to update configuration")
+    return {"message": "Configuration updated successfully"}
 
 
 @app.get("/api/questions/{question_code}")

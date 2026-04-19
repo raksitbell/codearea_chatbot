@@ -228,3 +228,16 @@ memory limit: {task_metadata.get('memory_limit', '')} MB
                 yield chunk['message']['content']
     except Exception as e:
         yield "AI Tutor connection failed, Contact Administrator"
+
+
+def list_models() -> list[str]:
+    """รายการโมเดลทั้งหมดที่ติดตั้งอยู่ใน Ollama"""
+    config = get_ollama_config()
+    client = ollama.Client(host=config.get("url", "http://localhost:11434"))
+    try:
+        res = client.list()
+        items = res.get("models") or []
+        return [m.get("name") for m in items if m.get("name")]
+    except Exception as e:
+        print(f"Error listing models: {e}")
+        return []

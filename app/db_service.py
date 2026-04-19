@@ -169,6 +169,21 @@ def download_question_pdf(path_in_bucket: str) -> bytes:
     if not data:
         raise HTTPException(status_code=404, detail="Empty file from storage.")
     return data
+def _translate_url_for_docker(url: str) -> str:
+    """แปลง localhost/127.0.0.1 เป็น host.docker.internal หากรันใน Docker"""
+    # ตรวจสอบว่ารันใน Docker หรือไม่ (เช็ค .dockerenv)
+    in_docker = os.path.exists("/.dockerenv") or os.environ.get("DOCKER_CONTAINER") == "true"
+    if not in_docker:
+        return url
+    
+    parsed = urlparse(url)
+    if parsed.hostname in ("localhost", "127.0.0.1"):
+        # แทนที่ hostname ด้วย host.docker.internal
+        new_netloc = parsed.netloc.replace(parsed.hostname, "host.docker.internal")
+        return parsed._replace(netloc=new_netloc).geturl()
+    return url
+
+
 def get_ollama_config() -> dict[str, str]:
     """ดึงการตั้งค่า Ollama จาก system_settings ใน Supabase"""
     try:
@@ -181,7 +196,9 @@ def get_ollama_config() -> dict[str, str]:
             .execute()
         )
         if res.data and res.data.get("value"):
-            return res.data["value"]
+            config = res.data["value"]
+            config["url"] = _translate_url_for_docker(config.get("url", ""))
+            return config
     except Exception as e:
         print(f"Warning: Failed to fetch Ollama config from DB: {e}")
     
@@ -190,3 +207,22 @@ def get_ollama_config() -> dict[str, str]:
         "url": os.environ.get("OLLAMA_HOST", "http://localhost:11434"),
         "model": os.environ.get("OLLAMA_CHAT_MODEL", "ai-tutor")
     }
+
+
+def update_ollama_config(url: str, model: str) -> bool:
+    """อัปเดตการตั้งค่า Ollama ลงใน system_settings ใน Supabase"""
+    try:
+        sb = get_supabase()
+        res = (
+            sb.table("system_settings")
+            .upsert({
+                "key": "ollama_config",
+                "value": {"url": url, "model": model},
+                "updated_at": "now()"
+            }, on_conflict="key")
+            .execute()
+        )
+        return True
+    except Exception as e:
+        print(f"Error updating Ollama config in DB: {e}")
+        return False
