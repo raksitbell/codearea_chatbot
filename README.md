@@ -1,96 +1,77 @@
-# 📚 AI Tutor: Vector Data Structure API
+# 📚 AI Tutor: Backend-as-a-Service (BaaS)
 
-โปรเจกต์นี้เป็นระบบ **REST API** สำหรับจำลองครูผู้ช่วยสอน (AI Tutor) ที่จะช่วยให้คำใบ้และตรวจวิเคราะห์โค้ดเรื่อง **"Vector (Dynamic Array)"** สำหรับนักศึกษา
+โปรเจกต์นี้เป็นหลักเขตของระบบ **AI Tutor** ที่ได้รับการปรับโฉมใหม่ให้เป็นสถาปัตยกรรม **Backend-as-a-Service (BaaS)** สำหรับช่วยสอนและตรวจโค้ดเรื่อง **"Vector (Dynamic Array)"** โดยเน้นความง่ายในการเชื่อมต่อและการบริหารจัดการจากศูนย์กลาง
 
-### ✨ ฟีเจอร์เด่น (Key Features)
-- **IDE-Like Web Interface:** ล้ำหน้าด้วยหน้าต่างเขียนโค้ดสไตล์ LeetCode ทรงพลังด้วย **Monaco Editor** พร้อมแถบโจทย์และแผงแชท AI แบบ Slide-out
-- **Real-time AI Streaming:** ตอบกลับคำถามและรีวิวโค้ดแบบข้อความสตรีมมิ่ง (Real-time) ให้ความรู้สึกเสมือนกำลังคุยกับผู้ช่วยส่วนตัวผ่าน ChatGPT
-- **Smart & Concise Code Analysis:** ระบบตรวจโค้ดที่ถูกจูนให้ฟีดแบ็กสั้น กระชับ เข้าถึงง่าย เน้นบอกผลลัพธ์และความเร็วเชิง Big O แบบตรงไปตรงมา
-- **RAG Integration:** ดึงความรู้และเนื้อหาจากสไลด์/ไฟล์ PDF เข้าแบคเอนด์มาช่วยเพิ่มความแม่นยำในการใบ้โจทย์
-
-## ⚙️ 1. สิ่งที่ต้องติดตั้ง (Prerequisites)
-
-ก่อนเริ่มใช้งานระบบนี้ คุณจะต้องติดตั้งโปรแกรมเหล่านี้ในเครื่องก่อน:
-1. **[Python 3.9+](https://www.python.org/downloads/)**
-2. **[Ollama](https://ollama.com/)** (ใช้เพื่อจำลองโมเดล AI ให้อยู่ในเครื่องของเรา)
+### ✨ ฟีเจอร์เด่นในเวอร์ชัน BaaS
+- **Centralized API:** รวมศูนย์ทุกฟังก์ชัน AI (Hint, Analyze, Compare) ไว้ที่เดียว
+- **Dynamic Configuration:** รองรับการตั้งค่า Ollama URL และ Model ผ่าน API และฐานข้อมูล (Bypass .env)
+- **Model Listing Proxy:** มี Endpoint สำหรับดึงรายการโมเดลจาก Ollama เพื่อให้ Frontend ใช้งานผ่าน Backend หลักได้ทันที
+- **Container-First:** ออกแบบมาเพื่อรันบน Docker พร้อมระบบ Hot-Reload สำหรับการพัฒนา
 
 ---
 
-## 📥 2. โหลดโมเดล AI (ทำแค่ครั้งแรกครั้งเดียว)
+## ⚙️ 1. โครงสร้างโฟลเดอร์ (Project Structure)
+```text
+ai-tutor/
+├── app/                  # โค้ดหลักของบริการ (FastAPI)
+│   ├── main.py           # Entry point และ API Routes
+│   ├── ai_service.py     # ตรรกะการสื่อสารกับโมเดล AI (Ollama)
+│   ├── db_service.py     # การเชื่อมต่อฐานข้อมูล (Supabase) และจัดการ Config
+│   └── rag_service.py    # ระบบ Retrieval-Augmented Generation (PDF Ingestion)
+├── data/                 # ที่เก็บข้อมูลชั่วคราว
+├── static/ & templates/  # ไฟล์หน้าเว็บจำลอง (Legacy/Test UI)
+├── Dockerfile            # การตั้งค่าสำหรับสร้าง Image
+└── docker-compose.yml    # การตั้งค่าสำหรับรัน Service พร้อม Volume Mount
+```
 
-เปิด Terminal และรัน 2 คำสั่งนี้เพื่อก๊อปปี้สมองของ AI มาไว้ในเครื่อง:
+---
+
+## 🚀 2. การเริ่มใช้งานด้วย Docker (แนะนำ)
+
+เพื่อความสะดวกและสเถียรภาพ แนะนำให้รันผ่าน Docker:
+
+1.  **เตรียม Ollama บนเครื่อง Host**:
+    - ตรวจสอบว่า Ollama รันอยู่และเปิดการเข้าถึงจาก Network:
+      ```bash
+      # สำหรับ macOS ตั้งค่าให้ฟังทุก IP
+      launchctl setenv OLLAMA_HOST "0.0.0.0"
+      ```
+    - รีสตาร์ทแอป Ollama
+
+2.  **รัน Service**:
+    ```bash
+    # เข้ามาที่โฟลเดอร์ ai-tutor
+    docker compose up -d --build
+    ```
+    ระบบจะพร้อมใช้งานที่ [http://localhost:8080](http://localhost:8080)
+
+---
+
+## 🛠 3. API Endpoints ที่สำคัญ (BaaS)
+
+นอกจากระบบ Hint/Analyze เดิมแล้ว เวอร์ชันนี้เพิ่ม Endpoint สำหรับการจัดการระบบ:
+
+- **`GET /api/health`**: ตรวจสอบสถานะ Service และความสามารถในการเชื่อมต่อกับ Ollama
+- **`GET /api/models`**: ดึงรายการโมเดลที่มีอยู่ในเครื่อง (Proxy จาก Ollama)
+- **`GET /api/config/ollama`**: ดูการตั้งค่า Ollama ที่กำลังใช้งานอยู่
+- **`POST /api/config/ollama`**: อัปเดตการตั้งค่า Ollama ลงฐานข้อมูล
+
+---
+
+## 🧪 4. การจัดการ connectivity (Docker)
+
+ระบบมีกลไก **URL Translation** อัตโนมัติ:
+- หากคุณตั้งค่า URL ใน Dashboard เป็น `http://localhost:11434`
+- เมื่อรันข้างใน Docker ระบบจะแปลงเป็น `http://host.docker.internal:11434` ให้โดยอัตโนมัติ เพื่อให้สามารถเข้าถึง Ollama ที่รันอยู่บนเครื่องจริงได้
+
+---
+
+## 📥 5. การเตรียมโมเดล (Ollama)
+อย่าลืมโหลดโมเดลที่จำเป็นก่อนใช้งาน:
 ```bash
-ollama run gemma3:12b
-ollama run nomic-embed-text
-```
-*(ตอนที่รัน `nomic-embed-text` ถ้ามันขึ้น Error ว่า require input text ไม่ต้องตกใจครับ ถือว่าโหลดสำเร็จแล้ว ให้กด `/bye` ออกจากแชทได้เลย)*
-
----
-
-## 🛠 3. ติดตั้ง Library (ทำแค่ครั้งแรก)
-
-เปิด Terminal เลื่อนเข้าไปที่โฟลเดอร์รันโปรเจกต์นี้ แนะนำให้ลงเครื่องมือดังนี้:
-```bash
-pip install -r requirements.txt
-```
-*(หรือถ้ารันไม่ผ่าน ให้ใช้คำสั่งนี้ `pip install fastapi uvicorn langchain langchain-community langchain-text-splitters pypdf chromadb python-multipart ollama`)*
-
----
-
-## 🚀 4. วิธีเปิดใช้งานระบบ (รันเซิร์ฟเวอร์)
-
-1. เปิด Terminal
-2. ตรวจสอบให้แน่ใจว่าอยู่ในโฟลเดอร์เดียวกับไฟล์ `main.py`
-3. พิมพ์คำสั่งรันเซิร์ฟเวอร์:
-```bash
-uvicorn main:app --reload
-```
-4. เปิด **Web Browser** เพื่อเริ่มใช้งาน: 
-   - 💻 **หน้า Web UI เล่นเกม/เขียนโค้ดหลัก:** 👉 **http://127.0.0.1:8000**
-   - ⚙️ **หน้า API Docs (สำหรับนักพัฒนา):** 👉 **http://127.0.0.1:8000/docs**
-
----
-
-## 🧪 5. วิธีการทดสอบแบบต่างๆ
-
-คุณสามารถทดสอบฟีเจอร์ AI และโจทย์ต่างๆ ผ่านหน้า **Web UI (`http://127.0.0.1:8000`)** ได้โดยตรง ซึ่งจะมีทั้ง Monaco Editor, ระบบอัปโหลด PDF, และแชท Streaming AI ทันที
-
-แต่หากต้องการยิง Request ทดสอบ API โดยตรง ให้เข้าไปที่หน้า **Swagger UI (`/docs`)** แล้วทำตามลำดับดังนี้:
-
-### สเต็ปที่ 1: อัปโหลดไฟล์โจทย์
-- คลิก **`POST /ingest`**
-- กด **"Try it out"**
-- อัปโหลดไฟล์ PDF (เช่น `vector_problem_th.pdf`) เข้าไป
-- กด **"Execute"** เพื่อให้ AI อ่านโจทย์และจำใส่ความจำ (ดู Code ด้านล่างต้องเป็น `200`)
-
-### สเต็ปที่ 2: เริ่มทดสอบการตรวจของ AI
-คุณสามารถโยนก้อนข้อมูล **JSON** เข้าไปให้ 3 API ต่อไปนี้ลองทำงาน (อย่าลืมลบของเก่าแล้วแปะตย. นี้ไปแทน)
-
-*(หมายเหตุ: ระบบได้จำลองโจทย์ไว้ใน Mock DB โดยมี `question_id` คือ `q1` และ `q2` ซึ่ง API จะดึงข้อมูลโจทย์ เช่น Constraints, Time Limit มาประกอบใน Prompt อัตโนมัติ)*
-
-**1. ขอคำใบ้ (นักศึกษายังไม่ได้โค้ด)** ➔ **`POST /api/hint`**
-```json
-{
-  "question_id": "q1",
-  "student_question": "ถ้าอาร์เรย์ vector ของผมมันเต็มแล้ว ผมต้องทำยังไงครับ มืดแปดด้าน"
-}
+ollama pull ai-tutor     # (หรือโมเดลที่ตั้งค่าไว้)
+ollama pull nomic-embed-text
 ```
 
-**2. วิเคราะห์โค้ด (ส่งงาน)** ➔ **`POST /api/analyze`**
-```json
-{
-  "question_id": "q1",
-  "student_code": "void push_back(int val) { arr[size] = val; size++; }"
-}
-```
-
-**3. ดูพัฒนาการ (ตรวจโค้ดเก่า-ใหม่)** ➔ **`POST /api/compare`**
-```json
-{
-  "question_id": "q1",
-  "old_code": "void push(int val) { arr[s++] = val; }",
-  "new_code": "void push(int val) { if (s == cap) resize(); arr[s++] = val; }"
-}
-```
-
-*(หมายเหตุ: ทุกครั้งที่กด Execute ของ AI อาจจะต้องรอโหลดประมาณ 10-15 วินาที เนื่องจากโมเดล LLM กำลังสร้างคำตอบสดๆ ขึ้นมา)*
+> [!TIP]
+> **Hot Reload Active**: เนื่องจากมีการใช้ Volume Mount ใน `docker-compose.yml` คุณสามารถแก้ไขโค้ดในโฟลเดอร์ `app/` และ Service จะทำการรีสตาร์ทตัวเองภายในคอนเทนเนอร์ทันที
