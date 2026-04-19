@@ -169,3 +169,24 @@ def download_question_pdf(path_in_bucket: str) -> bytes:
     if not data:
         raise HTTPException(status_code=404, detail="Empty file from storage.")
     return data
+def get_ollama_config() -> dict[str, str]:
+    """ดึงการตั้งค่า Ollama จาก system_settings ใน Supabase"""
+    try:
+        sb = get_supabase()
+        res = (
+            sb.table("system_settings")
+            .select("value")
+            .eq("key", "ollama_config")
+            .single()
+            .execute()
+        )
+        if res.data and res.data.get("value"):
+            return res.data["value"]
+    except Exception as e:
+        print(f"Warning: Failed to fetch Ollama config from DB: {e}")
+    
+    # Fallback to env vars if DB fetch fails
+    return {
+        "url": os.environ.get("OLLAMA_HOST", "http://localhost:11434"),
+        "model": os.environ.get("OLLAMA_CHAT_MODEL", "ai-tutor")
+    }

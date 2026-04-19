@@ -21,8 +21,6 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, model_validator
 
 from ai_service import (
-    DEFAULT_MODEL,
-    MODEL_MAP,
     generate_code_comparison,
     generate_post_submit_analysis,
     generate_pre_submit_hint,
@@ -251,7 +249,7 @@ async def get_hint(request: HintRequest):
         metadata["title"] + " " + metadata["description"] + " " + request.student_question,
         question_code=metadata.get("code") or metadata.get("id"),
     )
-    model_name = MODEL_MAP.get(request.model, DEFAULT_MODEL) if request.model else DEFAULT_MODEL
+    model_name = request.model if request.model else None
     return StreamingResponse(
         generate_pre_submit_hint(ctx, metadata, request.student_question, model_name, request.fast_mode),
         media_type="text/plain",
@@ -267,7 +265,7 @@ async def analyze_code(request: AnalyzeRequest):
         metadata["title"] + " " + metadata["description"] + "\n" + request.student_code[:2000],
         question_code=metadata.get("code") or metadata.get("id"),
     )
-    model_name = MODEL_MAP.get(request.model, DEFAULT_MODEL) if request.model else DEFAULT_MODEL
+    model_name = request.model if request.model else None
     return StreamingResponse(
         generate_post_submit_analysis(ctx, metadata, request.student_code, model_name, request.fast_mode),
         media_type="text/plain",
@@ -287,7 +285,7 @@ async def compare_code(request: CompareRequest):
         rag_query,
         question_code=metadata.get("code") or metadata.get("id"),
     )
-    model_name = MODEL_MAP.get(request.model, DEFAULT_MODEL) if request.model else DEFAULT_MODEL
+    model_name = request.model if request.model else None
     return StreamingResponse(
         generate_code_comparison(
             ctx,

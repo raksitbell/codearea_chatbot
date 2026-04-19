@@ -1,22 +1,17 @@
 import os
 import ollama
+from db_service import get_ollama_config
 
-# ชื่อโมเดลต้องตรงกับ `ollama list` (สร้างด้วย `ollama create ... -f Modelfile`)
-# gemma: ค่าเริ่มต้นใช้ `ai-tutor` (Modelfile หลัก) — ถ้าใช้ Modelfile.gemma ให้รัน
-#   ollama create ai-tutor-gemma -f Modelfile.gemma
-# แล้วตั้ง OLLAMA_MODEL_GEMMA=ai-tutor-gemma
-DEFAULT_MODEL = os.environ.get("OLLAMA_CHAT_MODEL", "ai-tutor")
-MODEL_MAP = {
-    "qwen": os.environ.get("OLLAMA_MODEL_QWEN", "ai-tutor-qwen"),
-    "gemma": os.environ.get("OLLAMA_MODEL_GEMMA", "ai-tutor"),
-}
-
-def generate_title_from_text(text: str, model_name: str = DEFAULT_MODEL) -> str:
+def generate_title_from_text(text: str, model_name: str = None) -> str:
+    config = get_ollama_config()
+    target_model = model_name or config.get("model", "ai-tutor")
+    client = ollama.Client(host=config.get("url", "http://localhost:11434"))
+    
     system_message = "คุณคือติวเตอร์ที่ต้องช่วยตั้งชื่อหัวข้อโจทย์ปัญหาที่บรรยายใน text สั้นๆ ตั้งชื่อให้กระชับ ไม่เกิน 1 บรรทัด (ประมาณ 3-10 คำ) และห้ามใส่เครื่องหมายคำพูดครอบ ห้ามอธิบายเพิ่มเติม"
     user_message = f"จากเนื้อหาต่อไปนี้ ช่วยตั้งชื่อโจทย์ปัญหาให้หน่อย:\n\n{text[:2000]}"
 
     try:
-        response = ollama.chat(model=model_name, messages=[
+        response = client.chat(model=target_model, messages=[
             {'role': 'system', 'content': system_message},
             {'role': 'user', 'content': user_message}
         ])
@@ -24,12 +19,16 @@ def generate_title_from_text(text: str, model_name: str = DEFAULT_MODEL) -> str:
         if 'message' in response and 'content' in response['message']:
             return response['message']['content'].strip(' "\'')
     except Exception as e:
-        print(f"Error generating title: {e}")
+        print(f"Error generating title with model {target_model}: {e}")
 
     return "Untitled Problem"
 
 
-def generate_pre_submit_hint(context: str, task_metadata: dict, student_question: str, model_name: str = DEFAULT_MODEL, fast_mode: bool = False):
+def generate_pre_submit_hint(context: str, task_metadata: dict, student_question: str, model_name: str = None, fast_mode: bool = False):
+    config = get_ollama_config()
+    target_model = model_name or config.get("model", "ai-tutor")
+    client = ollama.Client(host=config.get("url", "http://localhost:11434"))
+
     system_message = """คุณคือ AI ติวเตอร์ที่ช่วยนักเรียนแก้ปัญหาเกี่ยวกับโครงสร้างข้อมูลเวกเตอร์ (vector data structure)
 
 กฎสำคัญ:
@@ -75,16 +74,23 @@ memory limit: {task_metadata.get('memory_limit', '')} MB
 
     options = {'num_ctx': 4000} if fast_mode else {}
     
-    response_stream = ollama.chat(model=model_name, messages=[
-        {'role': 'system', 'content': system_message},
-        {'role': 'user', 'content': user_message}
-    ], stream=True, options=options)
-    for chunk in response_stream:
-        if 'message' in chunk and 'content' in chunk['message']:
-            yield chunk['message']['content']
+    try:
+        response_stream = client.chat(model=target_model, messages=[
+            {'role': 'system', 'content': system_message},
+            {'role': 'user', 'content': user_message}
+        ], stream=True, options=options)
+        for chunk in response_stream:
+            if 'message' in chunk and 'content' in chunk['message']:
+                yield chunk['message']['content']
+    except Exception as e:
+        yield f"Error connecting to Ollama ({target_model}): {str(e)}"
 
 
-def generate_post_submit_analysis(context: str, task_metadata: dict, student_code: str, model_name: str = DEFAULT_MODEL, fast_mode: bool = False):
+def generate_post_submit_analysis(context: str, task_metadata: dict, student_code: str, model_name: str = None, fast_mode: bool = False):
+    config = get_ollama_config()
+    target_model = model_name or config.get("model", "ai-tutor")
+    client = ollama.Client(host=config.get("url", "http://localhost:11434"))
+
     system_message = """คุณคือ AI ติวเตอร์ตรวจโค้ดที่อธิบายเก่ง กระชับ และเข้าใจง่าย
 
 กฎสำคัญ:
@@ -127,13 +133,16 @@ memory limit: {task_metadata.get('memory_limit', '')} MB
 
     options = {'num_ctx': 4000} if fast_mode else {}
 
-    response_stream = ollama.chat(model=model_name, messages=[
-        {'role': 'system', 'content': system_message},
-        {'role': 'user', 'content': user_message}
-    ], stream=True, options=options)
-    for chunk in response_stream:
-        if 'message' in chunk and 'content' in chunk['message']:
-            yield chunk['message']['content']
+    try:
+        response_stream = client.chat(model=target_model, messages=[
+            {'role': 'system', 'content': system_message},
+            {'role': 'user', 'content': user_message}
+        ], stream=True, options=options)
+        for chunk in response_stream:
+            if 'message' in chunk and 'content' in chunk['message']:
+                yield chunk['message']['content']
+    except Exception as e:
+        yield f"Error connecting to Ollama ({target_model}): {str(e)}"
 
 
 def generate_code_comparison(
@@ -141,10 +150,14 @@ def generate_code_comparison(
     task_metadata: dict,
     old_code: str,
     new_code: str,
-    model_name: str = DEFAULT_MODEL,
+    model_name: str = None,
     fast_mode: bool = False,
     student_question: str = "",
 ):
+    config = get_ollama_config()
+    target_model = model_name or config.get("model", "ai-tutor")
+    client = ollama.Client(host=config.get("url", "http://localhost:11434"))
+
     system_message = """คุณคือ AI ติวเตอร์และผู้รีวิวโค้ด ที่ช่วยนักเรียนเปรียบเทียบโค้ดสองเวอร์ชันสำหรับโจทย์โครงสร้างข้อมูลเวกเตอร์ (vector data structure)
 
 กฎสำคัญ:
@@ -205,10 +218,13 @@ memory limit: {task_metadata.get('memory_limit', '')} MB
 
     options = {'num_ctx': 4000} if fast_mode else {}
 
-    response_stream = ollama.chat(model=model_name, messages=[
-        {'role': 'system', 'content': system_message},
-        {'role': 'user', 'content': user_message}
-    ], stream=True, options=options)
-    for chunk in response_stream:
-        if 'message' in chunk and 'content' in chunk['message']:
-            yield chunk['message']['content']
+    try:
+        response_stream = client.chat(model=target_model, messages=[
+            {'role': 'system', 'content': system_message},
+            {'role': 'user', 'content': user_message}
+        ], stream=True, options=options)
+        for chunk in response_stream:
+            if 'message' in chunk and 'content' in chunk['message']:
+                yield chunk['message']['content']
+    except Exception as e:
+        yield f"Error connecting to Ollama ({target_model}): {str(e)}"

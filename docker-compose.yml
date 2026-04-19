@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  ai-tutor:
+    build: .
+    container_name: ai-tutor-api
+    ports:
+      - "8080:8000"
+    environment:
+      - OLLAMA_HOST=http://host.docker.internal:11434
+      - OLLAMA_CHAT_MODEL=ai-tutor
+      - USE_MOCK_QUESTIONS=false
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - chroma_data:/app/app/chroma_db
+    restart: always
+
+volumes:
+  chroma_data:

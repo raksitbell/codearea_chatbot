@@ -1,0 +1,16 @@
+.git
+.gitignore
+.env
+.DS_Store
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.db
+chroma_db/
+scripts/
+pdfs/
+Modelfile*
+README.md
+SUMMARY.md
+AI_ARCHITECTURE.md

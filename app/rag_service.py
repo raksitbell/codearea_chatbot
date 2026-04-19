@@ -8,13 +8,18 @@ from langchain_community.embeddings import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import chromadb
 
+from db_service import get_ollama_config
+
 CHROMA_PATH = "./chroma_db"
 EMBEDDING_MODEL = os.environ.get("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text")
 
-
 class RAGService:
     def __init__(self):
-        self.embeddings = OllamaEmbeddings(model=EMBEDDING_MODEL)
+        config = get_ollama_config()
+        self.embeddings = OllamaEmbeddings(
+            model=EMBEDDING_MODEL,
+            base_url=config.get("url", "http://localhost:11434")
+        )
         self.chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
 
         self.collection_name = "vector_problems"
