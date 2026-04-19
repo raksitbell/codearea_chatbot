@@ -83,7 +83,7 @@ memory limit: {task_metadata.get('memory_limit', '')} MB
             if 'message' in chunk and 'content' in chunk['message']:
                 yield chunk['message']['content']
     except Exception as e:
-        yield f"Error connecting to Ollama ({target_model}): {str(e)}"
+        yield "AI Tutor connection failed, Contact Administrator"
 
 
 def generate_post_submit_analysis(context: str, task_metadata: dict, student_code: str, model_name: str = None, fast_mode: bool = False):
@@ -142,7 +142,7 @@ memory limit: {task_metadata.get('memory_limit', '')} MB
             if 'message' in chunk and 'content' in chunk['message']:
                 yield chunk['message']['content']
     except Exception as e:
-        yield f"Error connecting to Ollama ({target_model}): {str(e)}"
+        yield "AI Tutor connection failed, Contact Administrator"
 
 
 def generate_code_comparison(
@@ -227,4 +227,4 @@ memory limit: {task_metadata.get('memory_limit', '')} MB
             if 'message' in chunk and 'content' in chunk['message']:
                 yield chunk['message']['content']
     except Exception as e:
-        yield f"Error connecting to Ollama ({target_model}): {str(e)}"
+        yield "AI Tutor connection failed, Contact Administrator"
