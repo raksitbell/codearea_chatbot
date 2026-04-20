@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+:root {
+  --background: #05070f;
+  --foreground: #ffffff;
+  --card-bg: rgba(13, 14, 20, 0.4);
+  --card-border: rgba(255, 255, 255, 0.1);
+  --accent-blue: #3b82f6;
+  --accent-purple: #8b5cf6;
+  --accent-emerald: #10b981;
+}
+
+body {
+  margin: 0;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+@layer components {
+  .glass-card {
+    @apply backdrop-blur-3xl bg-[#0d0e14]/40 border border-white/10 rounded-[2rem] overflow-hidden transition-all duration-500;
+  }
+  
+  .premium-input {
+    @apply h-14 w-full bg-white/5 border border-white/10 rounded-2xl px-5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/50 transition-all;
+  }
+}

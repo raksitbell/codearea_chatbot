@@ -1,77 +1,108 @@
-# 📚 AI Tutor: Backend-as-a-Service (BaaS)
+# CodeArea — AI Tutor BaaS (Backend-as-a-Service)
 
-โปรเจกต์นี้เป็นหลักเขตของระบบ **AI Tutor** ที่ได้รับการปรับโฉมใหม่ให้เป็นสถาปัตยกรรม **Backend-as-a-Service (BaaS)** สำหรับช่วยสอนและตรวจโค้ดเรื่อง **"Vector (Dynamic Array)"** โดยเน้นความง่ายในการเชื่อมต่อและการบริหารจัดการจากศูนย์กลาง
+ระบบหลังบ้านอัจฉริยะ (Modular Backend) สำหรับบริการ AI Tutor ในโปรเจกต์ CodeArea พัฒนาด้วย **FastAPI (Python)** ออกแบบมาในรูปแบบ **BaaS (Backend-as-a-Service)** ที่สามารถแยกไปรันเป็นบริการอิสระ (Stateless Container) และเชื่อมต่อกับระบบหลักผ่าน Proxy ได้อย่างสมบูรณ์
 
-### ✨ ฟีเจอร์เด่นในเวอร์ชัน BaaS
-- **Centralized API:** รวมศูนย์ทุกฟังก์ชัน AI (Hint, Analyze, Compare) ไว้ที่เดียว
-- **Dynamic Configuration:** รองรับการตั้งค่า Ollama URL และ Model ผ่าน API และฐานข้อมูล (Bypass .env)
-- **Model Listing Proxy:** มี Endpoint สำหรับดึงรายการโมเดลจาก Ollama เพื่อให้ Frontend ใช้งานผ่าน Backend หลักได้ทันที
-- **Container-First:** ออกแบบมาเพื่อรันบน Docker พร้อมระบบ Hot-Reload สำหรับการพัฒนา
+## 🚀 คุณสมบัติเด่น (Features)
+
+- 🤖 **ระบบโมเดลคู่ (Dual Model System)**: รองรับการสลับโมเดลระหว่าง `Qwen-3` (เน้นการวิเคราะห์เป็นขั้นตอน CoT) และ `Gemma-3` (เน้นความเป็นกันเองและความเร็ว)
+- ⚡ **การตอบกลับแบบเรียลไทม์ (Streaming)**: ใช้เทคนิค **Chunked Transfer Encoding** เพื่อให้ AI พิมพ์ตอบโต้ได้ทันทีโดยไม่ต้องรอให้เจนเสร็จทั้งหมด
+- 📚 **การดึงข้อมูลอัจฉริยะ (RAG Integration)**: เชื่อมต่อข้อมูลโดยตรงจากโจทย์ (PDF) ผ่าน **ChromaDB Vector Store** และ **nomic-embed-text** เพื่อให้คำแนะนำที่แม่นยำตามเนื้อหาบทเรียน
+- 🎨 **แดชบอร์ดจัดการส่วนตัว (Integrated Dashboard)**: มาพร้อมหน้าจอสำหรับตั้งค่าการเชื่อมต่อ Ollama และการจัดการโมเดลในตัว (Vite + React)
+- 📜 **เอกสาร API มาตรฐาน (Swagger UI)**: มีระบบเอกสาร API แบบ Interactive ที่สามารถทดสอบได้ทันทีผ่านเส้นทาง `/docs`
 
 ---
 
-## ⚙️ 1. โครงสร้างโฟลเดอร์ (Project Structure)
+## 💻 เทคโนโลยีที่ใช้ (Tech Stack)
+
+<p align="left">
+  <a href="https://skillicons.dev">
+    <img src="https://skillicons.dev/icons?i=python,fastapi,react,vite,ts,docker,ollama,supabase" />
+  </a>
+</p>
+
+| หมวดหมู่ | เทคโนโลยีที่เลือกใช้ |
+| :--- | :--- |
+| **ภาษาหลัก / Framework** | FastAPI (Python 3.10+) |
+| **แดชบอร์ดจัดการ UI** | Vite + React + TailwindCSS |
+| **ระบบรัน AI (Backend)** | Ollama (Local LLM) |
+| **ฐานข้อมูลเวกเตอร์** | ChromaDB |
+| **ระบบประมวลผลข้อความ** | nomic-embed-text |
+| **ระบบคอนเทนเนอร์** | Docker & Docker Compose |
+
+---
+
+## 📂 โครงสร้างโปรเจกต์ (Project Structure)
+
 ```text
 ai-tutor/
-├── app/                  # โค้ดหลักของบริการ (FastAPI)
-│   ├── main.py           # Entry point และ API Routes
-│   ├── ai_service.py     # ตรรกะการสื่อสารกับโมเดล AI (Ollama)
-│   ├── db_service.py     # การเชื่อมต่อฐานข้อมูล (Supabase) และจัดการ Config
-│   └── rag_service.py    # ระบบ Retrieval-Augmented Generation (PDF Ingestion)
-├── data/                 # ที่เก็บข้อมูลชั่วคราว
-├── static/ & templates/  # ไฟล์หน้าเว็บจำลอง (Legacy/Test UI)
-├── Dockerfile            # การตั้งค่าสำหรับสร้าง Image
-└── docker-compose.yml    # การตั้งค่าสำหรับรัน Service พร้อม Volume Mount
+├── app/                  # เลเยอร์แอปพลิเคชัน Python FastAPI
+│   ├── api/              # ส่วนจัดการ API (ai, config, questions, testing)
+│   ├── core/             # การตั้งค่าส่วนกลางและความปลอดภัย
+│   ├── services/         # เลเยอร์ลอจิก (Ollama, RAG, Supabase)
+│   ├── schemas/          # โมเดลข้อมูล Pydantic (Type Safety)
+│   └── main.py           # จุดเริ่มต้นของระบบ (Entry Point)
+├── ui/                   # แดชบอร์ดจัดการสำหรับแอดมิน (React)
+├── Dockerfile            # การตั้งค่าสำหรับสร้าง Production Build
+└── docker-compose.yml    # การตั้งค่าสำหรับการรันระบบด้วย Docker
 ```
 
 ---
 
-## 🚀 2. การเริ่มใช้งานด้วย Docker (แนะนำ)
+## 🏗️ สถาปัตยกรรมระบบ (Architecture)
 
-เพื่อความสะดวกและสเถียรภาพ แนะนำให้รันผ่าน Docker:
+### 1. กลไกการส่งข้อมูลแบบสตรีมมิ่ง (Streaming Mechanism)
+แอปพลิเคชันใช้ `StreamingResponse` ร่วมกับ `yield` Generator ใน Python เพื่อส่งข้อมูลออกมาทีละ Chunk ทันทีที่ AI ประมวลผลแต่ละ Token เสร็จ วิธีนี้ช่วยลดความล่าช้า (Latency) และประหยัดหน่วยความจำบนเซิร์ฟเวอร์เนื่องจากไม่ต้องเก็บสตริงขนาดใหญ่ไว้ใน RAM
 
-1.  **เตรียม Ollama บนเครื่อง Host**:
-    - ตรวจสอบว่า Ollama รันอยู่และเปิดการเข้าถึงจาก Network:
-      ```bash
-      # สำหรับ macOS ตั้งค่าให้ฟังทุก IP
-      launchctl setenv OLLAMA_HOST "0.0.0.0"
-      ```
-    - รีสตาร์ทแอป Ollama
-
-2.  **รัน Service**:
-    ```bash
-    # เข้ามาที่โฟลเดอร์ ai-tutor
-    docker compose up -d --build
-    ```
-    ระบบจะพร้อมใช้งานที่ [http://localhost:8080](http://localhost:8080)
+### 2. ระบบการดึงข้อมูลมาเสริม (RAG Flow)
+1. **การนำเข้าข้อมูล (Ingestion)**: ดึงข้อความจาก PDF → แบ่งเป็นชิ้นส่วน (Chunking) → แปลงเป็นเวกเตอร์ (Embeddings) → เก็บลง **ChromaDB**
+2. **การดึงข้อมูล (Retrieval)**: เมื่อผู้ใช้อธิบายนิยามหรือติดปัญหา → ระบบค้นหาเนื้อหาที่เกี่ยวข้องที่สุดจากเวกเตอร์ DB → นำเนื้อหานั้นมาเป็นบริบท (Context)
+3. **การสร้างคำตอบ (Generation)**: ส่งคำถามพร้อมบริบทให้ AI ประมวลผลและสรุปออกมาเป็นคำแนะนำแบบทีละขั้นตอน
 
 ---
 
-## 🛠 3. API Endpoints ที่สำคัญ (BaaS)
+## 🌓 เปรียบเทียบโมเดล (Dual Model System)
 
-นอกจากระบบ Hint/Analyze เดิมแล้ว เวอร์ชันนี้เพิ่ม Endpoint สำหรับการจัดการระบบ:
-
-- **`GET /api/health`**: ตรวจสอบสถานะ Service และความสามารถในการเชื่อมต่อกับ Ollama
-- **`GET /api/models`**: ดึงรายการโมเดลที่มีอยู่ในเครื่อง (Proxy จาก Ollama)
-- **`GET /api/config/ollama`**: ดูการตั้งค่า Ollama ที่กำลังใช้งานอยู่
-- **`POST /api/config/ollama`**: อัปเดตการตั้งค่า Ollama ลงฐานข้อมูล
-
----
-
-## 🧪 4. การจัดการ connectivity (Docker)
-
-ระบบมีกลไก **URL Translation** อัตโนมัติ:
-- หากคุณตั้งค่า URL ใน Dashboard เป็น `http://localhost:11434`
-- เมื่อรันข้างใน Docker ระบบจะแปลงเป็น `http://host.docker.internal:11434` ให้โดยอัตโนมัติ เพื่อให้สามารถเข้าถึง Ollama ที่รันอยู่บนเครื่องจริงได้
+| คุณสมบัติ | `ai-tutor-qwen` | `ai-tutor-gemma` |
+| :--- | :--- | :--- |
+| **สไตล์การตอบ** | **คิดวิเคราะห์เจาะลึก (CoT)** | **ติวเตอร์มาตรฐาน (Standard)** |
+| **วัตถุประสงค์หลัก** | แก้ไขปัญหาตรรกะที่ซับซ้อน | ให้คำใบ้และคำแนะนำทั่วไป |
+| **โมเดลฐาน** | Qwen 3 (8B) | Gemma 3 (12B) |
+| **ความแม่นยำ** | สูงมาก (Temperature 0.1) | ปกติ (Temperature 0.4) |
 
 ---
 
-## 📥 5. การเตรียมโมเดล (Ollama)
-อย่าลืมโหลดโมเดลที่จำเป็นก่อนใช้งาน:
+## 📖 คู่มือการติดตั้งและใช้งาน (Setup Guide)
+
+### 🐳 การรันด้วย Docker (แนะนำ)
 ```bash
-ollama pull ai-tutor     # (หรือโมเดลที่ตั้งค่าไว้)
-ollama pull nomic-embed-text
+docker compose up -d --build
+```
+- **หน้าแดชบอร์ด**: [http://localhost:8080](http://localhost:8080)
+- **เอกสาร API (Swagger)**: [http://localhost:8080/docs](http://localhost:8080/docs)
+
+### 🛠️ การรันในโหมดพัฒนา (Local Development)
+**ส่วนหลังบ้าน (Backend):**
+```bash
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8080
+```
+**ส่วนจัดการ (UI Dashboard):**
+```bash
+cd ui && npm install && npm run dev
 ```
 
-> [!TIP]
-> **Hot Reload Active**: เนื่องจากมีการใช้ Volume Mount ใน `docker-compose.yml` คุณสามารถแก้ไขโค้ดในโฟลเดอร์ `app/` และ Service จะทำการรีสตาร์ทตัวเองภายในคอนเทนเนอร์ทันที
+---
+
+## 🎓 คำถามที่พบบ่อย (Project Defense Q&A)
+
+> [!NOTE]
+> หัวข้อสำหรับการเตรียมตัวตอบคำถามในการนำเสนอโปรเจกต์เกี่ยวกับการทำงานของ AI
+
+- **ทำไมไม่ใช้ OpenAI หรือ Gemini?**: เพื่อรักษา **ความเป็นส่วนตัวของข้อมูล** (Data Privacy) และทำให้ระบบทำงานได้โดยไม่มีค่าใช้จ่ายต่อ Token (Cost Efficiency)
+- **AI จะแอบเฉลยโค้ดให้นักเรียนไหม?**: ระบบใช้ **System Prompt Engineering** บังคับให้ AI ทำหน้าที่เป็นติวเตอร์ ซึ่งจะใบ้เฉพาะแนวคิด (Pseudo-code) เท่านั้น **ห้ามแสดงโค้ดเฉลยเด็ดขาด**
+- **หากใช้งานพร้อมกันจำนวนมากจะไหวไหม?**: รันไทม์ Ollama มีข้อจำกัดทาง VRAM ในอนาคตสามารถขยายการรองรับได้ด้วยการทำ Load Balancing หรือใช้ Message Queue
+
+---
+
+## 📜 การอนุญาตใช้งาน (License)
+จัดทำขึ้นสำหรับโปรเจกต์ **CodeArea** — มุ่งเน้นการยกระดับการเรียนการสอนโปรแกรมมิ่งด้วยเทคโนโลยี AI

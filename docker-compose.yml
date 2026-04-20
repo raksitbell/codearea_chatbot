@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   ai-tutor:
     build: .
@@ -17,7 +15,7 @@ services:
     volumes:
       - ./app:/app/app
       - chroma_data:/app/app/chroma_db
-    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     restart: always
 
 volumes:
