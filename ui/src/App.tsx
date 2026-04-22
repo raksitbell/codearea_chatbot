@@ -217,23 +217,36 @@ function App() {
 
             <div className="space-y-6">
               <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-1">1. โมเดลสำหรับแชท (Chat Model)</label>
+                <div className="flex items-center justify-between ml-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-white/30">1. โมเดลสำหรับแชท (Chat Model)</label>
+                  {config.model.toLowerCase().includes('embed') && (
+                    <span className="flex items-center gap-1 text-[8px] font-black uppercase tracking-tighter text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20 animate-pulse">
+                      <AlertCircle className="h-2.5 w-2.5" /> Invalid Model Type
+                    </span>
+                  )}
+                </div>
                 {models.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {models.map(m => (
-                      <button
-                        key={`chat-${m}`}
-                        onClick={() => setConfig({ ...config, model: m })}
-                        className={`px-4 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border flex items-center gap-3 relative overflow-hidden group ${config.model === m
-                          ? 'bg-indigo-500/10 border-indigo-500/50 text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.1)]'
-                          : 'bg-white/[0.02] border-white/5 text-white/20 hover:bg-white/[0.05] hover:border-white/10 hover:text-white/60'
-                          }`}
-                      >
-                        <div className={`h-1.5 w-1.5 rounded-full ${config.model === m ? 'bg-indigo-400 animate-pulse' : 'bg-white/10 group-hover:bg-white/30'}`} />
-                        <span className="truncate">{m}</span>
-                        <Database className={`h-3.5 w-3.5 ml-auto opacity-20 ${config.model === m ? 'opacity-40' : ''}`} />
-                      </button>
-                    ))}
+                    {models.map(m => {
+                      const isEmbed = m.toLowerCase().includes('embed');
+                      return (
+                        <button
+                          key={`chat-${m}`}
+                          onClick={() => setConfig({ ...config, model: m })}
+                          className={`px-4 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border flex items-center gap-3 relative overflow-hidden group ${config.model === m
+                            ? isEmbed 
+                              ? 'bg-rose-500/10 border-rose-500/50 text-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.1)]'
+                              : 'bg-indigo-500/10 border-indigo-500/50 text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.1)]'
+                            : 'bg-white/[0.02] border-white/5 text-white/20 hover:bg-white/[0.05] hover:border-white/10 hover:text-white/60'
+                            }`}
+                        >
+                          <div className={`h-1.5 w-1.5 rounded-full ${config.model === m ? (isEmbed ? 'bg-rose-400' : 'bg-indigo-400 animate-pulse') : 'bg-white/10 group-hover:bg-white/30'}`} />
+                          <span className="truncate">{m}</span>
+                          {isEmbed && <div className="absolute top-0 right-0 px-2 py-0.5 bg-rose-500/10 text-rose-500/50 text-[7px] font-bold uppercase tracking-tighter rounded-bl-lg">Embedding Only</div>}
+                          <Database className={`h-3.5 w-3.5 ml-auto opacity-20 ${config.model === m ? 'opacity-40' : ''}`} />
+                        </button>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="rounded-[2rem] border border-dashed border-white/5 bg-white/[0.01] p-6 text-center flex flex-col items-center gap-3">
@@ -247,21 +260,24 @@ function App() {
                 <label className="text-[10px] font-black uppercase tracking-widest text-emerald-500/50 ml-1">2. โมเดลสำหรับดึงข้อมูล (Embedding Model)</label>
                 {models.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {models.map(m => (
-                      <button
-                        key={`embed-${m}`}
-                        onClick={() => setConfig({ ...config, embedding_model: m })}
-                        className={`px-4 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border flex items-center gap-3 relative overflow-hidden group ${config.embedding_model === m
-                          ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.1)]'
-                          : 'bg-white/[0.02] border-white/5 text-white/20 hover:bg-white/[0.05] hover:border-white/10 hover:text-white/60'
-                          }`}
-                      >
-                        <div className={`h-1.5 w-1.5 rounded-full ${config.embedding_model === m ? 'bg-emerald-400 animate-pulse' : 'bg-white/10 group-hover:bg-white/30'}`} />
-                        <span className="truncate">{m}</span>
-                        {m.includes('embed') && <div className="absolute top-0 right-0 px-2 py-0.5 bg-emerald-500/10 text-emerald-500/50 text-[7px] font-bold uppercase tracking-tighter rounded-bl-lg">Recommend</div>}
-                        <Database className={`h-3.5 w-3.5 ml-auto opacity-20 ${config.embedding_model === m ? 'opacity-40' : ''}`} />
-                      </button>
-                    ))}
+                    {models.map(m => {
+                      const isEmbed = m.toLowerCase().includes('embed');
+                      return (
+                        <button
+                          key={`embed-${m}`}
+                          onClick={() => setConfig({ ...config, embedding_model: m })}
+                          className={`px-4 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border flex items-center gap-3 relative overflow-hidden group ${config.embedding_model === m
+                            ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.1)]'
+                            : 'bg-white/[0.02] border-white/5 text-white/20 hover:bg-white/[0.05] hover:border-white/10 hover:text-white/60'
+                            }`}
+                        >
+                          <div className={`h-1.5 w-1.5 rounded-full ${config.embedding_model === m ? 'bg-emerald-400 animate-pulse' : 'bg-white/10 group-hover:bg-white/30'}`} />
+                          <span className="truncate">{m}</span>
+                          {isEmbed && <div className="absolute top-0 right-0 px-2 py-0.5 bg-emerald-500/10 text-emerald-500/50 text-[7px] font-bold uppercase tracking-tighter rounded-bl-lg">Recommend</div>}
+                          <Database className={`h-3.5 w-3.5 ml-auto opacity-20 ${config.embedding_model === m ? 'opacity-40' : ''}`} />
+                        </button>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="rounded-[2rem] border border-dashed border-white/5 bg-white/[0.01] p-6 text-center flex flex-col items-center gap-3">

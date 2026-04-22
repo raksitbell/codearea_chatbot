@@ -29,7 +29,11 @@ class AILogicService:
             for chunk in stream:
                 yield chunk['message']['content']
         except Exception as e:
-            yield f"Connection Error: {str(e)}"
+            msg = str(e)
+            if "does not support chat" in msg or "400" in msg:
+                yield f"Model Configuration Error: โมเดล '{target_model}' ไม่รองรับการแชท (อาจเป็นโมเดลสำหรับ Embedding เท่านั้น) กรุณาตรวจสอบการตั้งค่าใน AI Tutor Dashboard"
+            else:
+                yield f"Connection Error: {msg}"
 
     @classmethod
     def generate_analysis(cls, context: str, metadata: Dict, student_code: str, model: str = None) -> Generator[str, None, None]:
@@ -46,7 +50,11 @@ class AILogicService:
             for chunk in stream:
                 yield chunk['message']['content']
         except Exception as e:
-            yield f"Connection Error: {str(e)}"
+            msg = str(e)
+            if "does not support chat" in msg or "400" in msg:
+                yield f"Model Configuration Error: โมเดล '{target_model}' ไม่รองรับการแชท กรุณาเปลี่ยนเป็นโมเดล LLM เช่น llama3 ใน Dashboard"
+            else:
+                yield f"Connection Error: {msg}"
 
     @classmethod
     def generate_comparison(cls, context: str, metadata: Dict, old_code: str, new_code: str, model: str = None) -> Generator[str, None, None]:
@@ -63,4 +71,8 @@ class AILogicService:
             for chunk in stream:
                 yield chunk['message']['content']
         except Exception as e:
-            yield f"Connection Error: {str(e)}"
+            msg = str(e)
+            if "does not support chat" in msg or "400" in msg:
+                yield f"Model Configuration Error: โมเดล '{target_model}' ไม่รองรับการแชท กรุณาเลือกโมเดลที่ถูกต้องในหน้าตั้งค่า"
+            else:
+                yield f"Connection Error: {msg}"
