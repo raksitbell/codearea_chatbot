@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     # AI Tutor specific configurations
     OLLAMA_HOST: str = os.getenv("OLLAMA_HOST", "http://localhost:11434")
     OLLAMA_CHAT_MODEL: str = os.getenv("OLLAMA_CHAT_MODEL", "ai-tutor")
+    OLLAMA_EMBEDDING_MODEL: str = os.getenv("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text")
     
     # Operational modes
     USE_MOCK_QUESTIONS: bool = os.getenv("USE_MOCK_QUESTIONS", "false").lower() in ("1", "true", "yes")

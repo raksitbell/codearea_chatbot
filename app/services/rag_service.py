@@ -15,8 +15,10 @@ class RAGService:
     
     def __init__(self):
         config = OllamaService.get_config()
+        # Use embedding_model from config, fallback to env, then default
+        emb_model = config.get("embedding_model") or os.environ.get("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text")
         self.embeddings = OllamaEmbeddings(
-            model=os.environ.get("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text"),
+            model=emb_model,
             base_url=config.get("url", "http://localhost:11434")
         )
         self.chroma_client = chromadb.PersistentClient(path="./chroma_db")

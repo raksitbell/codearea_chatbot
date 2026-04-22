@@ -67,7 +67,7 @@ function ConfigCard({ title, subtitle, icon, accentColor, children, footerLeft, 
 }
 
 function App() {
-  const [config, setConfig] = useState<OllamaConfig>({ url: '', model: '' })
+  const [config, setConfig] = useState<OllamaConfig>({ url: '', model: '', embedding_model: '' })
   const [models, setModels] = useState<string[]>([])
   const [health, setHealth] = useState<HealthStatus | null>(null)
 
@@ -194,7 +194,7 @@ function App() {
           footerRight={
             <button
               onClick={handleSave}
-              disabled={saving || !config.url || !config.model}
+              disabled={saving || !config.url || !config.model || !config.embedding_model}
               className="h-11 px-8 rounded-2xl bg-indigo-600 shadow-[0_4px_20px_rgba(99,102,241,0.3)] text-xs font-black uppercase tracking-widest text-white hover:bg-indigo-500 hover:scale-[1.02] transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
             >
               {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
@@ -215,32 +215,61 @@ function App() {
               />
             </div>
 
-            <div className="space-y-4">
-              <label className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-1">โมเดลที่พร้อมใช้งาน</label>
-              {models.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {models.map(m => (
-                    <button
-                      key={m}
-                      onClick={() => setConfig({ ...config, model: m })}
-                      className={`px-4 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border flex items-center gap-3 relative overflow-hidden group ${config.model === m
-                        ? 'bg-indigo-500/10 border-indigo-500/50 text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.1)]'
-                        : 'bg-white/[0.02] border-white/5 text-white/20 hover:bg-white/[0.05] hover:border-white/10 hover:text-white/60'
-                        }`}
-                    >
-                      <div className={`h-1.5 w-1.5 rounded-full ${config.model === m ? 'bg-indigo-400 animate-pulse' : 'bg-white/10 group-hover:bg-white/30'}`} />
-                      <span className="truncate">{m}</span>
-                      <Database className={`h-3.5 w-3.5 ml-auto opacity-20 ${config.model === m ? 'opacity-40' : ''}`} />
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-[2rem] border border-dashed border-white/5 bg-white/[0.01] p-10 text-center flex flex-col items-center gap-3">
-                  <Database className="h-8 w-8 text-white/5" />
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/20">ไม่พบโมเดล</p>
-                  <p className="text-[9px] font-medium text-white/10 max-w-[200px]">กด "ทดสอบการเชื่อมต่อ" เพื่อแสดงโมเดลที่พร้อมใช้งาน</p>
-                </div>
-              )}
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-1">1. โมเดลสำหรับแชท (Chat Model)</label>
+                {models.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {models.map(m => (
+                      <button
+                        key={`chat-${m}`}
+                        onClick={() => setConfig({ ...config, model: m })}
+                        className={`px-4 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border flex items-center gap-3 relative overflow-hidden group ${config.model === m
+                          ? 'bg-indigo-500/10 border-indigo-500/50 text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.1)]'
+                          : 'bg-white/[0.02] border-white/5 text-white/20 hover:bg-white/[0.05] hover:border-white/10 hover:text-white/60'
+                          }`}
+                      >
+                        <div className={`h-1.5 w-1.5 rounded-full ${config.model === m ? 'bg-indigo-400 animate-pulse' : 'bg-white/10 group-hover:bg-white/30'}`} />
+                        <span className="truncate">{m}</span>
+                        <Database className={`h-3.5 w-3.5 ml-auto opacity-20 ${config.model === m ? 'opacity-40' : ''}`} />
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-[2rem] border border-dashed border-white/5 bg-white/[0.01] p-6 text-center flex flex-col items-center gap-3">
+                    <Database className="h-6 w-6 text-white/5" />
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-white/20">กดทดสอบเพื่อเลือกโมเดล</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-emerald-500/50 ml-1">2. โมเดลสำหรับดึงข้อมูล (Embedding Model)</label>
+                {models.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {models.map(m => (
+                      <button
+                        key={`embed-${m}`}
+                        onClick={() => setConfig({ ...config, embedding_model: m })}
+                        className={`px-4 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border flex items-center gap-3 relative overflow-hidden group ${config.embedding_model === m
+                          ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.1)]'
+                          : 'bg-white/[0.02] border-white/5 text-white/20 hover:bg-white/[0.05] hover:border-white/10 hover:text-white/60'
+                          }`}
+                      >
+                        <div className={`h-1.5 w-1.5 rounded-full ${config.embedding_model === m ? 'bg-emerald-400 animate-pulse' : 'bg-white/10 group-hover:bg-white/30'}`} />
+                        <span className="truncate">{m}</span>
+                        {m.includes('embed') && <div className="absolute top-0 right-0 px-2 py-0.5 bg-emerald-500/10 text-emerald-500/50 text-[7px] font-bold uppercase tracking-tighter rounded-bl-lg">Recommend</div>}
+                        <Database className={`h-3.5 w-3.5 ml-auto opacity-20 ${config.embedding_model === m ? 'opacity-40' : ''}`} />
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-[2rem] border border-dashed border-white/5 bg-white/[0.01] p-6 text-center flex flex-col items-center gap-3">
+                    <Database className="h-6 w-6 text-white/5" />
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-white/20">กดทดสอบเพื่อเลือกโมเดล</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

@@ -9,6 +9,7 @@ const api = axios.create({
 export interface OllamaConfig {
   url: string;
   model: string;
+  embedding_model?: string;
 }
 
 export interface HealthStatus {

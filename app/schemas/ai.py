@@ -34,3 +34,4 @@ class CompareRequest(BaseModel):
 class OllamaConfigRequest(BaseModel):
     url: str
     model: str
+    embedding_model: Optional[str] = "nomic-embed-text"

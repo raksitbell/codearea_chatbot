@@ -12,7 +12,7 @@ async def get_config():
 @router.post("/ollama")
 async def update_config(request: OllamaConfigRequest):
     """Update the Ollama configuration in the database."""
-    if OllamaService.update_config(request.url, request.model):
+    if OllamaService.update_config(request.url, request.model, request.embedding_model):
         return {"message": "Configuration updated successfully."}
     raise HTTPException(status_code=500, detail="Failed to update configuration.")
 

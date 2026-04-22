@@ -18,17 +18,22 @@ class OllamaService:
             sb = get_supabase()
             res = sb.table("system_settings").select("value").eq("key", "ollama_config").single().execute()
             if res.data and "value" in res.data:
-                return res.data["value"]
+                config = res.data["value"]
+                # Ensure all keys exist
+                if "embedding_model" not in config:
+                    config["embedding_model"] = os.getenv("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text")
+                return config
         except Exception as e:
             print(f"Ollama Config Error: {e}")
             
         return {
             "url": os.getenv("OLLAMA_HOST", "http://localhost:11434"),
-            "model": os.getenv("OLLAMA_CHAT_MODEL", "ai-tutor")
+            "model": os.getenv("OLLAMA_CHAT_MODEL", "ai-tutor"),
+            "embedding_model": os.getenv("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text")
         }
 
     @staticmethod
-    def update_config(url: str, model: str) -> bool:
+    def update_config(url: str, model: str, embedding_model: str = "nomic-embed-text") -> bool:
         """
         Persists Ollama configuration to Supabase.
         """
@@ -36,7 +41,7 @@ class OllamaService:
             sb = get_supabase()
             sb.table("system_settings").upsert({
                 "key": "ollama_config",
-                "value": {"url": url, "model": model},
+                "value": {"url": url, "model": model, "embedding_model": embedding_model},
                 "updated_at": "now()"
             }).execute()
             return True
