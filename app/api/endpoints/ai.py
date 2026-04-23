@@ -1,4 +1,8 @@
-from fastapi import APIRouter, HTTPException
+"""
+เส้นทาง /api/ai — สตรีมข้อความจาก AILogicService
+นโยบายคำตอบ (ห้ามโค้ด / pseudo code) กำหนดใน system prompt ที่ app/services/ai_logic.py
+"""
+from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from app.schemas.ai import HintRequest, AnalyzeRequest, CompareRequest
 from app.services.ai_logic import AILogicService

@@ -80,6 +80,41 @@ docker compose up -d --build
 - **หน้าแดชบอร์ด**: [http://localhost:8080](http://localhost:8080)
 - **เอกสาร API (Swagger)**: [http://localhost:8080/docs](http://localhost:8080/docs)
 
+### 🌍 เปิด Public URL ด้วย ngrok (แนวเดียว Laravel Sail + Omise)
+รูปแบบใน `docker-compose.yml` เหมือนตัวอย่าง Sail: `command: ["http", "ai-tutor:8000"]` + `NGROK_AUTHTOKEN` จาก `.env`
+
+1) ใส่ค่าในไฟล์ `.env` (โฟลเดอร์นี้ — compose ใช้ `${NGROK_AUTHTOKEN}` ตอน `docker compose up`):
+```env
+NGROK_AUTHTOKEN=<YOUR_NGROK_AUTHTOKEN>
+```
+
+2) รัน service:
+```bash
+docker compose up -d --build
+```
+
+3) ดู public URL:
+```bash
+docker compose logs -f ngrok
+```
+หรือดูจาก ngrok inspector: [http://localhost:4040](http://localhost:4040)
+
+หรือดึงเป็น JSON จากเครื่องคุณ:
+```bash
+curl -s http://localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url'
+```
+
+### 🔗 ให้ภายนอกยิงเข้ามาได้ (แนว Omise webhook / callback ภายนอก)
+
+ngrok จะสร้าง **URL สาธารณะแบบ HTTPS** ชี้เข้า container `ai-tutor` พอร์ต `8000` ให้เอง ไม่ได้ให้ “public IP คงที่” แบบเซิร์ฟเวอร์จริง (ถ้าต้องการ IP/โดเมนคงที่ควร deploy บน cloud)
+
+1) รัน `docker compose up -d` แล้วคัดลอก `public_url` (รูปแบบ `https://xxxxx.ngrok-free.app`) จากขั้นตอนด้านบน  
+2) ระบบภายนอก (เช่น webhook, mobile, เซิร์ฟเวอร์อื่น) ให้ยิงมาที่ **base URL นั้น + path ของ API** เช่น:
+   - Health: `GET https://<public_url>/api/health`
+   - Hint (ตัวอย่าง): `POST https://<public_url>/api/ai/hint`
+3) **Back office (Node)** ที่อยู่คนละเครื่อง/คนละ Docker network: ตั้งค่า AI connector ใน Dashboard (`system_settings` → `ai_config.url`) เป็น **`https://<public_url>`** (ไม่มี `/` ท้าย) — **ห้ามใช้** hostname `ai-tutor-ngrok` เพราะเป็นชื่อภายใน compose เท่านั้น  
+4) ถ้าต้องการ **โดเมนคงที่** ให้ตั้งผ่านแผน ngrok ที่รองรับ (หรือ override `command` เอง) — แผน Free ใช้ URL ที่ระบบสร้างให้ก็พอ
+
 ### 🛠️ การรันในโหมดพัฒนา (Local Development)
 **ส่วนหลังบ้าน (Backend):**
 ```bash
@@ -99,7 +134,7 @@ cd ui && npm install && npm run dev
 > หัวข้อสำหรับการเตรียมตัวตอบคำถามในการนำเสนอโปรเจกต์เกี่ยวกับการทำงานของ AI
 
 - **ทำไมไม่ใช้ OpenAI หรือ Gemini?**: เพื่อรักษา **ความเป็นส่วนตัวของข้อมูล** (Data Privacy) และทำให้ระบบทำงานได้โดยไม่มีค่าใช้จ่ายต่อ Token (Cost Efficiency)
-- **AI จะแอบเฉลยโค้ดให้นักเรียนไหม?**: ระบบใช้ **System Prompt Engineering** บังคับให้ AI ทำหน้าที่เป็นติวเตอร์ ซึ่งจะใบ้เฉพาะแนวคิด (Pseudo-code) เท่านั้น **ห้ามแสดงโค้ดเฉลยเด็ดขาด**
+- **AI จะแอบเฉลยโค้ดให้นักเรียนไหม?**: ระบบใช้ **System Prompt Engineering** บังคับให้ตอบเป็นภาษาธรรมดาและแนวคิดเท่านั้น **ห้ามส่งโค้ด ตัวอย่างโค้ด หรือ pseudo code ในคำตอบ**
 - **หากใช้งานพร้อมกันจำนวนมากจะไหวไหม?**: รันไทม์ Ollama มีข้อจำกัดทาง VRAM ในอนาคตสามารถขยายการรองรับได้ด้วยการทำ Load Balancing หรือใช้ Message Queue
 
 ---

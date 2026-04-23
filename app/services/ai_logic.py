@@ -2,6 +2,15 @@ import ollama
 from typing import Dict, Any, Generator
 from app.services.ollama_service import OllamaService
 
+# ใช้ร่วมทุก route ภายใต้ /api/ai — คำตอบที่ส่งถึงผู้ใช้ต้องไม่มีโค้ดหรือ pseudo code
+_SYSTEM_OUTPUT_POLICY = (
+    "นโยบายการตอบ (บังคับ): ห้ามใส่โค้ดจริง ข้อความที่จัดรูปแบบให้อ่านเหมือนโปรแกรม "
+    "pseudo code ตัวอย่าง syntax คำสั่ง หรือบล็อก markdown แบบ ``` ในคำตอบของคุณ "
+    "ห้ามเลียนแบบโครงสร้างภาษาโปรแกรมมิ่ง (เช่น บรรทัดละคำสั่งที่ดูเหมือน script) "
+    "ให้อธิบายด้วยภาษาธรรมดา แนวคิด ขั้นตอนทางความคิด หรือคำถามชี้ทางเท่านั้น"
+)
+
+
 class AILogicService:
     """
     Service containing the AI prompt engineering logic and response generation.
@@ -18,7 +27,10 @@ class AILogicService:
     def generate_hint(cls, context: str, metadata: Dict, student_question: str, model: str = None) -> Generator[str, None, None]:
         client, target_model = cls._get_client_and_model(model)
         
-        system = "คุณคือ AI ติวเตอร์ที่ช่วยนักเรียนแก้ปัญหาเวกเตอร์โดยให้คำใบ้ ห้ามแสดงโค้ดเฉลย"
+        system = (
+            "คุณคือ AI ติวเตอร์ที่ช่วยนักเรียนแก้ปัญหาเชิงตรรกะและแนวคิดโดยให้คำใบ้เท่านั้น ไม่เฉลยเป็นขั้นตอนโปรแกรม "
+            + _SYSTEM_OUTPUT_POLICY
+        )
         prompt = f"โจทย์: {metadata['title']}\nรายละเอียด: {metadata['description']}\nคำถาม: {student_question}\nบริบท: {context}"
         
         try:
@@ -39,7 +51,11 @@ class AILogicService:
     def generate_analysis(cls, context: str, metadata: Dict, student_code: str, model: str = None) -> Generator[str, None, None]:
         client, target_model = cls._get_client_and_model(model)
         
-        system = "คุณคือ AI ตรวจโค้ด วิเคราะห์ Big O และให้คำแนะนำที่กระชับ"
+        system = (
+            "คุณวิเคราะห์โค้ดที่ผู้ใช้ส่ง (ใช้เฉพาะภายในการคิด) แล้วสรุปเป็นข้อความธรรมดาเท่านั้น "
+            "เช่น จุดที่ควรปรับ ความซับซ้อนเชิง asymptotic หรือความเสี่ยง โดยไม่คัดลอกหรือเขียนซ้ำโค้ดใด ๆ ในคำตอบ หรือแนวทางที่จะทำให้ดีคิดให้ผู้ใช้เกิดการเรียนรู้หรือ citical thinking"
+            + _SYSTEM_OUTPUT_POLICY
+        )
         prompt = f"โจทย์: {metadata['title']}\nโค้ดนักเรียน: {student_code}\nบริบท: {context}"
         
         try:
@@ -60,7 +76,11 @@ class AILogicService:
     def generate_comparison(cls, context: str, metadata: Dict, old_code: str, new_code: str, model: str = None) -> Generator[str, None, None]:
         client, target_model = cls._get_client_and_model(model)
         
-        system = "คุณคือ AI ผู้เชี่ยวชาญ เปรียบเทียบโค้ดสองเวอร์ชันและแนะนำจุดที่ดีขึ้น"
+        system = (
+            "คุณเปรียบเทียบสองเวอร์ชันที่ผู้ใช้ส่ง (ใช้เฉพาะภายในการคิด) แล้วอธิบายความแตกต่าง ข้อดีข้อเสีย และจุดที่ควรปรับเป็นภาษาธรรมดาเท่านั้น "
+            "ห้ามสะท้อนโค้ดกลับมาในคำตอบ "
+            + _SYSTEM_OUTPUT_POLICY
+        )
         prompt = f"โจทย์: {metadata['title']}\nโค้ดเก่า: {old_code}\nโค้ดใหม่: {new_code}\nบริบท: {context}"
         
         try:
