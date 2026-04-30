@@ -18,17 +18,5 @@ services:
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     restart: always
 
-  ngrok:
-    image: ngrok/ngrok:latest
-    container_name: ai-tutor-ngrok
-    restart: unless-stopped
-    environment:
-      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
-    command: ["http", "ai-tutor:8000"]
-    depends_on:
-      - ai-tutor
-    ports:
-      - "4040:4040"
-
 volumes:
   chroma_data:

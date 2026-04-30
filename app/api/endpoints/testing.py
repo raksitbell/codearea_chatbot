@@ -1,42 +1,45 @@
 import os
-import shutil
 import subprocess
 import tempfile
-import uuid
-from typing import Optional
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from app.services.rag_service import rag_service
-from app.services.ai_logic import AILogicService
-from app.core.config import settings
+from app.services.question_service import QuestionService
 
 router = APIRouter()
 
 class RunRequest(BaseModel):
     code: str
 
-@router.post("/ingest")
-async def ingest_pdf(
-    file: UploadFile = File(...),
-    question_code: Optional[str] = Form(None),
-):
+@router.post("/sync/{code}")
+async def sync_question(code: str):
     """
-    Development endpoint to manually ingest PDF files into the vector database.
+    Syncs a specific question from the database to the vector store.
     """
-    if not file.filename.endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Only PDF files are supported.")
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-        shutil.copyfileobj(file.file, tmp)
-        temp_path = tmp.name
-
-    qc = (question_code or "").strip() or "__manual_upload__"
     try:
-        result = rag_service.ingest_pdf(temp_path, question_code=qc, source_uri=file.filename)
-        return {"message": "Success", "details": result}
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+        question_data = QuestionService.get_question_by_code(code)
+        result = rag_service.sync_question_from_db(question_data)
+        return result
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/sync-all")
+async def sync_all_questions():
+    """
+    Syncs all active public questions from the database to the vector store.
+    """
+    try:
+        questions = QuestionService.get_public_questions()
+        results = []
+        for q in questions:
+            question_data = QuestionService.get_question_by_code(q["code"])
+            res = rag_service.sync_question_from_db(question_data)
+            results.append({"code": q["code"], "result": res})
+        return {"status": "success", "synced": len(results), "details": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/run")
 async def run_code(request: RunRequest):

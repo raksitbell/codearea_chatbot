@@ -50,13 +50,52 @@ ai-tutor/
 
 ## 🏗️ สถาปัตยกรรมระบบ (Architecture)
 
-### 1. กลไกการส่งข้อมูลแบบสตรีมมิ่ง (Streaming Mechanism)
+### 1. แผนภาพแสดงกระบวนการทำงาน (Process Flow Diagram)
+
+```mermaid
+flowchart TD
+    %% Ingestion Pipeline
+    subgraph Data Pipeline (การเตรียมข้อมูล)
+        DB[(Database โจทย์/เนื้อหา)]
+        CheckUpdate{มีการอัปเดตข้อมูลหรือไม่?}
+        
+        Extract[1. ดึงข้อมูลดิบ (Pull Raw Data)]
+        Chunk[2. ตัดแบ่งข้อความ (Chunking)]
+        Embed[3. แปลงเป็นเวกเตอร์ (Embedding)]
+        VectorDB[(4. จัดเก็บลง Vector Database)]
+        
+        DB --> CheckUpdate
+        CheckUpdate -- Yes --> Extract
+        CheckUpdate -- No --> Skip[ข้ามการประมวลผล (ประหยัดทรัพยากร)]
+        
+        Extract --> Chunk --> Embed --> VectorDB
+    end
+
+    %% Query Pipeline
+    subgraph Query Pipeline (การตอบสนองผู้ใช้)
+        User((ผู้ใช้งาน))
+        API[FastAPI Backend]
+        LLM[Ollama - Qwen/Gemma]
+        
+        User -->|ส่งคำถามและโค้ด| API
+        API -->|ค้นหาบริบทที่เกี่ยวข้อง (RAG)| VectorDB
+        VectorDB -->|คืนค่า Context| API
+        API -->|ส่งคำถาม + บริบท| LLM
+        LLM -->|5. ตอบกลับ (Respond / Streaming)| API
+        API -->|คำตอบ| User
+    end
+```
+
+### 2. กลไกการส่งข้อมูลแบบสตรีมมิ่ง (Streaming Mechanism)
 แอปพลิเคชันใช้ `StreamingResponse` ร่วมกับ `yield` Generator ใน Python เพื่อส่งข้อมูลออกมาทีละ Chunk ทันทีที่ AI ประมวลผลแต่ละ Token เสร็จ วิธีนี้ช่วยลดความล่าช้า (Latency) และประหยัดหน่วยความจำบนเซิร์ฟเวอร์เนื่องจากไม่ต้องเก็บสตริงขนาดใหญ่ไว้ใน RAM
 
-### 2. ระบบการดึงข้อมูลมาเสริม (RAG Flow)
-1. **การนำเข้าข้อมูล (Ingestion)**: ดึงข้อความจาก PDF → แบ่งเป็นชิ้นส่วน (Chunking) → แปลงเป็นเวกเตอร์ (Embeddings) → เก็บลง **ChromaDB**
-2. **การดึงข้อมูล (Retrieval)**: เมื่อผู้ใช้อธิบายนิยามหรือติดปัญหา → ระบบค้นหาเนื้อหาที่เกี่ยวข้องที่สุดจากเวกเตอร์ DB → นำเนื้อหานั้นมาเป็นบริบท (Context)
-3. **การสร้างคำตอบ (Generation)**: ส่งคำถามพร้อมบริบทให้ AI ประมวลผลและสรุปออกมาเป็นคำแนะนำแบบทีละขั้นตอน
+### 3. ระบบการดึงข้อมูลมาเสริม (RAG Flow)
+กระบวนการ RAG ถูกออกแบบมาให้ทำงานอย่างมีประสิทธิภาพ โดยแบ่งเป็น 2 ส่วน:
+1. **การเตรียมข้อมูล (Data Pipeline)**: 
+   - ระบบจะตรวจสอบการอัปเดตจากฐานข้อมูลหลักก่อน หากไม่มีข้อมูลใหม่หรือไม่มีการแก้ไข ระบบจะ**ข้ามกระบวนการทั้งหมดโดยไม่ต้องดึงข้อมูลหรือแปลงเวกเตอร์ใหม่ทุกครั้ง**
+   - หากมีการอัปเดต: ดึงข้อมูลดิบจากฐานข้อมูล (Pull Raw Data) → สกัดและตัดแบ่งข้อความ (Extraction & Chunking) → แปลงข้อความเป็นเวกเตอร์ (Embedding) → บันทึกลง ChromaDB (Store to Vector DB)
+2. **การตอบสนองผู้ใช้งาน (Retrieval & Respond)**: 
+   - เมื่อผู้ใช้ถามคำถาม ระบบจะดึงข้อมูลที่ใกล้เคียงที่สุดจาก Vector DB เพื่อเป็นบริบท (Context) และส่งต่อให้ AI สร้างคำตอบที่อ้างอิงจากฐานข้อมูลอย่างแม่นยำ
 
 ---
 
@@ -80,24 +119,6 @@ docker compose up -d --build
 - **หน้าแดชบอร์ด**: [http://localhost:8080](http://localhost:8080)
 - **เอกสาร API (Swagger)**: [http://localhost:8080/docs](http://localhost:8080/docs)
 
-### 🌍 เปิด Public URL ด้วย ngrok (แนวเดียว Laravel Sail + Omise)
-รูปแบบใน `docker-compose.yml` เหมือนตัวอย่าง Sail: `command: ["http", "ai-tutor:8000"]` + `NGROK_AUTHTOKEN` จาก `.env`
-
-1) ใส่ค่าในไฟล์ `.env` (โฟลเดอร์นี้ — compose ใช้ `${NGROK_AUTHTOKEN}` ตอน `docker compose up`):
-```env
-NGROK_AUTHTOKEN=<YOUR_NGROK_AUTHTOKEN>
-```
-
-2) รัน service:
-```bash
-docker compose up -d --build
-```
-
-3) ดู public URL:
-```bash
-docker compose logs -f ngrok
-```
-หรือดูจาก ngrok inspector: [http://localhost:4040](http://localhost:4040)
 
 หรือดึงเป็น JSON จากเครื่องคุณ:
 ```bash
