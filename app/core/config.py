@@ -8,7 +8,8 @@ class Settings(BaseSettings):
     
     # Supabase configurations
     SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
-    SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+    SUPABASE_PUBLISHABLE_KEY: str = os.getenv("SUPABASE_PUBLISHABLE_KEY", "")
+    SUPABASE_SECRET_KEY: str = os.getenv("SUPABASE_SECRET_KEY", "")
     SUPABASE_STORAGE_QUESTIONS_BUCKET: str = os.getenv("SUPABASE_STORAGE_QUESTIONS_BUCKET", "questions")
     
     # AI Tutor specific configurations

@@ -19,7 +19,7 @@ class SupabaseService:
         """
         if cls._instance is None:
             url = settings.SUPABASE_URL
-            key = settings.SUPABASE_SERVICE_ROLE_KEY
+            key = settings.SUPABASE_SECRET_KEY
             
             if not url or not key:
                 raise HTTPException(
