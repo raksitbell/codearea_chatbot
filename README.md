@@ -15,7 +15,7 @@ docker compose up -d
 docker compose ps
 ```
 
-The setup script pulls `qwen3:4b` and `nomic-embed-text`. Models persist in the `ollama-data` Docker volume.
+The setup script pulls the chat and embedding models configured in `.env`. Models persist in the `ollama-data` Docker volume.
 
 Configure the root application with the Windows host name or IP and the native Ollama port:
 
