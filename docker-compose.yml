@@ -1,22 +1,18 @@
+name: codearea-chatbot
+
 services:
-  ai-tutor:
-    build: .
-    container_name: ai-tutor-api
-    ports:
-      - "8080:8000"
-    environment:
-      - OLLAMA_HOST=http://host.docker.internal:11434
-      - OLLAMA_CHAT_MODEL=ai-tutor
-      - USE_MOCK_QUESTIONS=false
-    env_file:
-      - .env
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+  ollama:
+    image: ollama/ollama:0.32.0
     volumes:
-      - ./app:/app/app
-      - chroma_data:/app/app/chroma_db
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
-    restart: always
+      - ollama-data:/root/.ollama
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
 
 volumes:
-  chroma_data:
+  ollama-data:
